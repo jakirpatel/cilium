@@ -554,23 +554,28 @@ func (p *Repository) GetRulesList() *models.Policy {
 }
 
 // ResolvePolicy returns the Policy computed against the provided set of labels.
-func (p *Repository) ResolvePolicy(labels labels.LabelArray) *Policy {
-	calculatedPolicy := &Policy{}
+func (p *Repository) ResolvePolicy(labels labels.LabelArray) (*Policy, error) {
+	calculatedPolicy := &Policy{
+		L4Policy:   NewL4Policy(),
+		CIDRPolicy: NewCIDRPolicy(),
+	}
 	// First obtain whether policy applies in both traffic directions, as well
 	// as list of rules which actually select this endpoint. This allows us
 	// to not have to iterate through the entire rule list multiple times and
 	// perform the matching decision again when computing policy for each
 	// protocol layer, which is quite costly in terms of performance.
-	ingressEnabled, egressEnabled, _ := p.computePolicyEnforcementAndRules(labels)
+	ingressEnabled, egressEnabled, matchingRules := p.computePolicyEnforcementAndRules(labels)
 	calculatedPolicy.IngressPolicyEnabled = ingressEnabled
 	calculatedPolicy.EgressPolicyEnabled = egressEnabled
 
 	ingressCtx := SearchContext{
-		To: labels,
+		To:          labels,
+		RulesSelect: true,
 	}
 
 	egressCtx := SearchContext{
-		From: labels,
+		From:        labels,
+		RulesSelect: true,
 	}
 
 	if option.Config.TracingEnabled() {
@@ -578,7 +583,24 @@ func (p *Repository) ResolvePolicy(labels labels.LabelArray) *Policy {
 		egressCtx.Trace = TRACE_ENABLED
 	}
 
-	return nil
+	if ingressEnabled {
+		newL4IngressPolicy, err := matchingRules.resolveL4IngressPolicy(&ingressCtx)
+		if err != nil {
+			return nil, err
+		}
+
+		calculatedPolicy.L4Policy.Ingress = newL4IngressPolicy.Ingress
+	}
+
+	if egressEnabled {
+		newL4EgressPolicy, err := matchingRules.resolveL4EgressPolicy(&egressCtx)
+		if err != nil {
+			return nil, err
+		}
+		calculatedPolicy.L4Policy.Egress = newL4EgressPolicy.Egress
+	}
+
+	return calculatedPolicy, nil
 }
 
 // computePolicyEnforcementAndRules returns whether policy applies at ingress or ingress
@@ -586,7 +608,7 @@ func (p *Repository) ResolvePolicy(labels labels.LabelArray) *Policy {
 // the set of labels.
 //
 // Must be called with repo mutex held for reading.
-func (p *Repository) computePolicyEnforcementAndRules(lbls labels.LabelArray) (ingress bool, egress bool, matchingRules []*rule) {
+func (p *Repository) computePolicyEnforcementAndRules(lbls labels.LabelArray) (ingress bool, egress bool, matchingRules ruleSlice) {
 	// Check if policy enforcement should be enabled at the daemon level.
 	switch GetPolicyEnabled() {
 	case option.AlwaysEnforce:
