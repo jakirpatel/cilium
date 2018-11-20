@@ -557,9 +557,10 @@ func (p *Repository) GetRulesList() *models.Policy {
 func (p *Repository) ResolvePolicy(id uint16, labels labels.LabelArray) (*Policy, error) {
 
 	calculatedPolicy := &Policy{
-		ID:         id,
-		L4Policy:   NewL4Policy(),
-		CIDRPolicy: NewCIDRPolicy(),
+		ID:             id,
+		L4Policy:       NewL4Policy(),
+		CIDRPolicy:     NewCIDRPolicy(),
+		PolicyMapState: make(PolicyMapState),
 	}
 	// First obtain whether policy applies in both traffic directions, as well
 	// as list of rules which actually select this endpoint. This allows us
