@@ -17,6 +17,7 @@ package policy
 // Policy is a structure which contains the resolved policy across all layers
 // (L3, L4, and L7).
 type Policy struct {
+	ID                   uint16
 	L4Policy             *L4Policy
 	CIDRPolicy           *CIDRPolicy
 	IngressPolicyEnabled bool

@@ -554,8 +554,10 @@ func (p *Repository) GetRulesList() *models.Policy {
 }
 
 // ResolvePolicy returns the Policy computed against the provided set of labels.
-func (p *Repository) ResolvePolicy(labels labels.LabelArray) (*Policy, error) {
+func (p *Repository) ResolvePolicy(id uint16, labels labels.LabelArray) (*Policy, error) {
+
 	calculatedPolicy := &Policy{
+		ID:         id,
 		L4Policy:   NewL4Policy(),
 		CIDRPolicy: NewCIDRPolicy(),
 	}
