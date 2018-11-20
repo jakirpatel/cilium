@@ -18,6 +18,7 @@ import (
 	"encoding/json"
 
 	"github.com/cilium/cilium/api/v1/models"
+	"github.com/cilium/cilium/pkg/identity/cache"
 	"github.com/cilium/cilium/pkg/labels"
 	"github.com/cilium/cilium/pkg/lock"
 	"github.com/cilium/cilium/pkg/metrics"
@@ -554,13 +555,14 @@ func (p *Repository) GetRulesList() *models.Policy {
 }
 
 // ResolvePolicy returns the Policy computed against the provided set of labels.
-func (p *Repository) ResolvePolicy(id uint16, labels labels.LabelArray) (*Policy, error) {
+func (p *Repository) ResolvePolicy(id uint16, labels labels.LabelArray, policyOwner PolicyOwner, identityCache cache.IdentityCache) (*Policy, error) {
 
 	calculatedPolicy := &Policy{
 		ID:             id,
 		L4Policy:       NewL4Policy(),
 		CIDRPolicy:     NewCIDRPolicy(),
 		PolicyMapState: make(PolicyMapState),
+		PolicyOwner:    policyOwner,
 	}
 	// First obtain whether policy applies in both traffic directions, as well
 	// as list of rules which actually select this endpoint. This allows us
@@ -616,6 +618,7 @@ func (p *Repository) ResolvePolicy(id uint16, labels labels.LabelArray) (*Policy
 		calculatedPolicy.L4Policy.Egress = newL4EgressPolicy.Egress
 	}
 
+	calculatedPolicy.computeDesiredL4PolicyMapEntries(identityCache)
 	calculatedPolicy.PolicyMapState.DetermineAllowLocalhost(calculatedPolicy.L4Policy)
 	calculatedPolicy.PolicyMapState.DetermineAllowFromWorld()
 
