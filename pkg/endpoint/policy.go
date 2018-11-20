@@ -135,7 +135,7 @@ func (e *Endpoint) convertL4FilterToPolicyMapKeys(filter *policy.L4Filter, direc
 // policy map key, in host byte order. Returns 0 if not found or the
 // filter doesn't require a redirect.
 // Must be called with Endpoint.Mutex held.
-func (e *Endpoint) lookupRedirectPort(l4Filter *policy.L4Filter) uint16 {
+func (e *Endpoint) LookupRedirectPort(l4Filter *policy.L4Filter) uint16 {
 	if !l4Filter.IsRedirect() {
 		return 0
 	}
@@ -472,7 +472,7 @@ func (e *Endpoint) setNextPolicyRevision(revision uint64) {
 //
 // Policy generation may fail, and in that case we exit before actually changing
 // the policy in any way, so that the last policy remains fully in effect if the
-// new policy can not be implemented. This is done on a per endpoint-basis,
+// new policy can not be im	plemented. This is done on a per endpoint-basis,
 // however, and it is possible that policy update succeeds for some endpoints,
 // while it fails for other endpoints.
 //
@@ -557,6 +557,8 @@ func (e *Endpoint) regeneratePolicy(owner Owner) error {
 	// no failures after this point
 	// Note - endpoint policy enforcement must be determined BEFORE this function!
 	e.computeDesiredPolicyMapState(repo)
+
+	repo.ResolvePolicy(e.ID, e.SecurityIdentity.LabelArray, e, *labelsMap)
 
 	if e.forcePolicyCompute {
 		forceRegeneration = true     // Options were changed by the caller.
