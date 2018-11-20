@@ -465,6 +465,29 @@ func (p *Repository) GetRulesMatching(labels labels.LabelArray) (ingressMatch bo
 	return
 }
 
+// getMatchingRules returns whether any of the rules in a repository contain a
+// rule with labels matching the labels in the provided LabelArray, as well as
+// a slice of all rules which match.
+//
+// Must be called with p.Mutex held
+func (p *Repository) getMatchingRules(labels labels.LabelArray) (ingressMatch bool, egressMatch bool, matchingRules []*rule) {
+	ingressMatch = false
+	egressMatch = false
+	for _, r := range p.rules {
+		rulesMatch := r.EndpointSelector.Matches(labels)
+		if rulesMatch {
+			if len(r.Ingress) > 0 {
+				ingressMatch = true
+			}
+			if len(r.Egress) > 0 {
+				egressMatch = true
+			}
+			matchingRules = append(matchingRules, r)
+		}
+	}
+	return
+}
+
 // NumRules returns the amount of rules in the policy repository.
 //
 // Must be called with p.Mutex held
@@ -533,37 +556,47 @@ func (p *Repository) GetRulesList() *models.Policy {
 // ResolvePolicy returns the Policy computed against the provided set of labels.
 func (p *Repository) ResolvePolicy(labels labels.LabelArray) *Policy {
 	calculatedPolicy := &Policy{}
-	calculatedPolicy.IngressPolicyEnabled, calculatedPolicy.EgressPolicyEnabled = p.ComputePolicyEnforcement(labels)
+	// First obtain whether policy applies in both traffic directions, as well
+	// as list of rules which actually select this endpoint. This allows us
+	// to not have to iterate through the entire rule list multiple times and
+	// perform the matching decision again when computing policy for each
+	// protocol layer, which is quite costly in terms of performance.
+	ingressEnabled, egressEnabled, _ := p.computePolicyEnforcementAndRules(labels)
+	calculatedPolicy.IngressPolicyEnabled = ingressEnabled
+	calculatedPolicy.EgressPolicyEnabled = egressEnabled
 
 	return nil
 }
 
-// ComputePolicyEnforcement returns whether policy applies at ingress or ingress
-// for the given set of labels.
+// computePolicyEnforcementAndRules returns whether policy applies at ingress or ingress
+// for the given set of labels, as well as a list of any rules which select
+// the set of labels.
 //
 // Must be called with repo mutex held for reading.
-func (p *Repository) ComputePolicyEnforcement(lbls labels.LabelArray) (ingress bool, egress bool) {
+func (p *Repository) computePolicyEnforcementAndRules(lbls labels.LabelArray) (ingress bool, egress bool, matchingRules []*rule) {
 	// Check if policy enforcement should be enabled at the daemon level.
 	switch GetPolicyEnabled() {
 	case option.AlwaysEnforce:
+		_, _, matchingRules = p.getMatchingRules(lbls)
 		// If policy enforcement is enabled for the daemon, then it has to be
 		// enabled for the endpoint.
-		return true, true
+		return true, true, matchingRules
 	case option.DefaultEnforcement:
-
+		ingress, egress, matchingRules = p.getMatchingRules(lbls)
 		// If the endpoint has the reserved:init label, i.e. if it has not yet
 		// received any labels, always enforce policy (default deny).
 		// TODO double check this.
 		if lbls.Has(labels.IDNameInit) {
-			return true, true
+			return true, true, matchingRules
 		}
 
-		// Default mode means that if rules contain labels that match this endpoint,
-		// then enable policy enforcement for this endpoint.
-		return p.GetRulesMatching(lbls)
+		// Default mode means that if rules contain labels that match this
+		// endpoint, then enable policy enforcement for this endpoint.
+		return ingress, egress, matchingRules
 	default:
 		// If policy enforcement isn't enabled, we do not enable policy
-		// enforcement for the endpoint.
-		return false, false
+		// enforcement for the endpoint. We don't care about returning any
+		// rules that match.
+		return false, false, nil
 	}
 }
