@@ -589,6 +589,12 @@ func (p *Repository) ResolvePolicy(labels labels.LabelArray) (*Policy, error) {
 			return nil, err
 		}
 
+		newCIDRIngressPolicy := matchingRules.resolveCIDRPolicy(&ingressCtx)
+		if err := newCIDRIngressPolicy.Validate(); err != nil {
+			return nil, err
+		}
+
+		calculatedPolicy.CIDRPolicy.Ingress = newCIDRIngressPolicy.Ingress
 		calculatedPolicy.L4Policy.Ingress = newL4IngressPolicy.Ingress
 	}
 
@@ -597,6 +603,13 @@ func (p *Repository) ResolvePolicy(labels labels.LabelArray) (*Policy, error) {
 		if err != nil {
 			return nil, err
 		}
+
+		newCIDREgressPolicy := matchingRules.resolveCIDRPolicy(&egressCtx)
+		if err := newCIDREgressPolicy.Validate(); err != nil {
+			return nil, err
+		}
+
+		calculatedPolicy.CIDRPolicy.Egress = newCIDREgressPolicy.Egress
 		calculatedPolicy.L4Policy.Egress = newL4EgressPolicy.Egress
 	}
 
