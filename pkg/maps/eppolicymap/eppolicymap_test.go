@@ -24,6 +24,7 @@ import (
 	"github.com/cilium/cilium/pkg/bpf"
 	"github.com/cilium/cilium/pkg/maps/lxcmap"
 	"github.com/cilium/cilium/pkg/maps/policymap"
+	"github.com/cilium/cilium/pkg/maps/policymap/policykey"
 	"github.com/cilium/cilium/pkg/option"
 
 	. "gopkg.in/check.v1"
@@ -49,7 +50,7 @@ func (e *EPPolicyMapTestSuite) TestWriteEndpoint(c *C) {
 	keys := make([]*lxcmap.EndpointKey, 1)
 	many := make([]*lxcmap.EndpointKey, 256)
 	fd, err := bpf.CreateMap(bpf.BPF_MAP_TYPE_HASH,
-		uint32(unsafe.Sizeof(policymap.PolicyKey{})),
+		uint32(unsafe.Sizeof(policykey.PolicyKey{})),
 		uint32(unsafe.Sizeof(policymap.PolicyEntry{})), 1024, 0, 0)
 	c.Assert(err, IsNil)
 
@@ -74,7 +75,7 @@ func (e *EPPolicyMapTestSuite) TestWriteEndpointFails(c *C) {
 	bpf.CheckOrMountFS("")
 	keys := make([]*lxcmap.EndpointKey, 1)
 	_, err := bpf.CreateMap(bpf.BPF_MAP_TYPE_HASH,
-		uint32(unsafe.Sizeof(policymap.PolicyKey{})),
+		uint32(unsafe.Sizeof(policykey.PolicyKey{})),
 		uint32(unsafe.Sizeof(policymap.PolicyEntry{})), 1024, 0, 0)
 	c.Assert(err, IsNil)
 
@@ -89,7 +90,7 @@ func (e *EPPolicyMapTestSuite) TestWriteEndpointDisabled(c *C) {
 	bpf.CheckOrMountFS("")
 	keys := make([]*lxcmap.EndpointKey, 1)
 	fd, err := bpf.CreateMap(bpf.BPF_MAP_TYPE_HASH,
-		uint32(unsafe.Sizeof(policymap.PolicyKey{})),
+		uint32(unsafe.Sizeof(policykey.PolicyKey{})),
 		uint32(unsafe.Sizeof(policymap.PolicyEntry{})), 1024, 0, 0)
 	c.Assert(err, IsNil)
 

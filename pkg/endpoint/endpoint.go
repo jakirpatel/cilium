@@ -43,6 +43,7 @@ import (
 	"github.com/cilium/cilium/pkg/mac"
 	bpfconfig "github.com/cilium/cilium/pkg/maps/configmap"
 	"github.com/cilium/cilium/pkg/maps/policymap"
+	"github.com/cilium/cilium/pkg/maps/policymap/policykey"
 	"github.com/cilium/cilium/pkg/metrics"
 	"github.com/cilium/cilium/pkg/monitor/notifications"
 	"github.com/cilium/cilium/pkg/option"
@@ -995,7 +996,7 @@ func (e *Endpoint) Allows(id identityPkg.NumericIdentity) bool {
 	e.UnconditionalRLock()
 	defer e.RUnlock()
 
-	keyToLookup := policymap.PolicyKey{
+	keyToLookup := policykey.PolicyKey{
 		Identity:         uint32(id),
 		TrafficDirection: trafficdirection.Ingress.Uint8(),
 	}

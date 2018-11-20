@@ -46,6 +46,7 @@ import (
 	"github.com/cilium/cilium/pkg/maps/ipcache"
 	"github.com/cilium/cilium/pkg/maps/lxcmap"
 	"github.com/cilium/cilium/pkg/maps/policymap"
+	"github.com/cilium/cilium/pkg/maps/policymap/policykey"
 	"github.com/cilium/cilium/pkg/option"
 	"github.com/cilium/cilium/pkg/policy"
 	"github.com/cilium/cilium/pkg/policy/trafficdirection"
@@ -312,7 +313,7 @@ func (e *Endpoint) addNewRedirectsFromMap(owner Owner, m policy.L4PolicyMap, des
 	var finalizeList revert.FinalizeList
 	var revertStack revert.RevertStack
 	var updatedStats []*models.ProxyStatistics
-	insertedDesiredMapState := make(map[policymap.PolicyKey]struct{})
+	insertedDesiredMapState := make(map[policykey.PolicyKey]struct{})
 	updatedDesiredMapState := make(PolicyMapState)
 
 	for _, l4 := range m {
@@ -1009,7 +1010,7 @@ func (e *Endpoint) GetBPFValue() (*lxcmap.EndpointInfo, error) {
 }
 
 // PolicyMapState is a state of a policy map.
-type PolicyMapState map[policymap.PolicyKey]PolicyMapStateEntry
+type PolicyMapState map[policykey.PolicyKey]PolicyMapStateEntry
 
 // PolicyMapStateEntry is the configuration associated with a PolicyKey in a
 // PolicyMapState. This is a minimized version of policymap.PolicyEntry.

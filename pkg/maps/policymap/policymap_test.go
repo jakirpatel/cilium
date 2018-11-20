@@ -17,6 +17,7 @@
 package policymap
 
 import (
+	"github.com/cilium/cilium/pkg/maps/policymap/policykey"
 	"github.com/cilium/cilium/pkg/policy/trafficdirection"
 
 	"testing"
@@ -47,7 +48,7 @@ func (pm *PolicyMapTestSuite) TestPolicyEntriesDump_Less(c *C) {
 			name: "Same element",
 			p: PolicyEntriesDump{
 				{
-					Key: PolicyKey{
+					Key: policykey.PolicyKey{
 						Identity:         uint32(0),
 						DestPort:         0,
 						Nexthdr:          0,
@@ -65,7 +66,7 @@ func (pm *PolicyMapTestSuite) TestPolicyEntriesDump_Less(c *C) {
 			name: "Element #0 is less than #1 because identity is smaller",
 			p: PolicyEntriesDump{
 				{
-					Key: PolicyKey{
+					Key: policykey.PolicyKey{
 						Identity:         uint32(0),
 						DestPort:         0,
 						Nexthdr:          0,
@@ -73,7 +74,7 @@ func (pm *PolicyMapTestSuite) TestPolicyEntriesDump_Less(c *C) {
 					},
 				},
 				{
-					Key: PolicyKey{
+					Key: policykey.PolicyKey{
 						Identity:         uint32(1),
 						DestPort:         0,
 						Nexthdr:          0,
@@ -91,7 +92,7 @@ func (pm *PolicyMapTestSuite) TestPolicyEntriesDump_Less(c *C) {
 			name: "Element #0 is less than #1 because TrafficDirection is smaller",
 			p: PolicyEntriesDump{
 				{
-					Key: PolicyKey{
+					Key: policykey.PolicyKey{
 						Identity:         uint32(0),
 						DestPort:         0,
 						Nexthdr:          0,
@@ -99,7 +100,7 @@ func (pm *PolicyMapTestSuite) TestPolicyEntriesDump_Less(c *C) {
 					},
 				},
 				{
-					Key: PolicyKey{
+					Key: policykey.PolicyKey{
 						Identity:         uint32(1),
 						DestPort:         0,
 						Nexthdr:          0,
@@ -117,7 +118,7 @@ func (pm *PolicyMapTestSuite) TestPolicyEntriesDump_Less(c *C) {
 			name: "Element #0 is not less than #1 because Identity is bigger",
 			p: PolicyEntriesDump{
 				{
-					Key: PolicyKey{
+					Key: policykey.PolicyKey{
 						Identity:         uint32(1),
 						DestPort:         0,
 						Nexthdr:          0,
@@ -125,7 +126,7 @@ func (pm *PolicyMapTestSuite) TestPolicyEntriesDump_Less(c *C) {
 					},
 				},
 				{
-					Key: PolicyKey{
+					Key: policykey.PolicyKey{
 						Identity:         uint32(0),
 						DestPort:         0,
 						Nexthdr:          0,

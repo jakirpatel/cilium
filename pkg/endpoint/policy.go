@@ -34,7 +34,7 @@ import (
 	k8sConst "github.com/cilium/cilium/pkg/k8s/apis/cilium.io"
 	"github.com/cilium/cilium/pkg/labels"
 	"github.com/cilium/cilium/pkg/logging/logfields"
-	"github.com/cilium/cilium/pkg/maps/policymap"
+	"github.com/cilium/cilium/pkg/maps/policymap/policykey"
 	"github.com/cilium/cilium/pkg/metrics"
 	"github.com/cilium/cilium/pkg/monitor"
 	"github.com/cilium/cilium/pkg/node"
@@ -50,13 +50,13 @@ import (
 
 var (
 	// localHostKey represents an ingress L3 allow from the local host.
-	localHostKey = policymap.PolicyKey{
+	localHostKey = policykey.PolicyKey{
 		Identity:         identityPkg.ReservedIdentityHost.Uint32(),
 		TrafficDirection: trafficdirection.Ingress.Uint8(),
 	}
 
 	// worldKey represents an ingress L3 allow from the world.
-	worldKey = policymap.PolicyKey{
+	worldKey = policykey.PolicyKey{
 		Identity:         identityPkg.ReservedIdentityWorld.Uint32(),
 		TrafficDirection: trafficdirection.Ingress.Uint8(),
 	}
@@ -110,15 +110,15 @@ func getSecurityIdentities(labelsMap cache.IdentityCache, selector *api.Endpoint
 // convertL4FilterToPolicyMapKeys converts filter into a list of PolicyKeys
 // that apply to this endpoint.
 // Must be called with endpoint.Mutex locked.
-func (e *Endpoint) convertL4FilterToPolicyMapKeys(filter *policy.L4Filter, direction trafficdirection.TrafficDirection) []policymap.PolicyKey {
-	keysToAdd := []policymap.PolicyKey{}
+func (e *Endpoint) convertL4FilterToPolicyMapKeys(filter *policy.L4Filter, direction trafficdirection.TrafficDirection) []policykey.PolicyKey {
+	keysToAdd := []policykey.PolicyKey{}
 	port := uint16(filter.Port)
 	proto := uint8(filter.U8Proto)
 
 	for _, sel := range filter.Endpoints {
 		for _, id := range getSecurityIdentities(*e.prevIdentityCache, &sel) {
 			srcID := id.Uint32()
-			keyToAdd := policymap.PolicyKey{
+			keyToAdd := policykey.PolicyKey{
 				Identity: srcID,
 				// NOTE: Port is in host byte-order!
 				DestPort:         port,
@@ -344,7 +344,7 @@ func (e *Endpoint) computeDesiredL3PolicyMapEntries(repo *policy.Repository, des
 			ingressAccess = api.Allowed
 		}
 		if ingressAccess == api.Allowed {
-			keyToAdd := policymap.PolicyKey{
+			keyToAdd := policykey.PolicyKey{
 				Identity:         identity.Uint32(),
 				TrafficDirection: trafficdirection.Ingress.Uint8(),
 			}
@@ -363,7 +363,7 @@ func (e *Endpoint) computeDesiredL3PolicyMapEntries(repo *policy.Repository, des
 			egressAccess = api.Allowed
 		}
 		if egressAccess == api.Allowed {
-			keyToAdd := policymap.PolicyKey{
+			keyToAdd := policykey.PolicyKey{
 				Identity:         identity.Uint32(),
 				TrafficDirection: trafficdirection.Egress.Uint8(),
 			}

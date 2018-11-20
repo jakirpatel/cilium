@@ -25,6 +25,7 @@ import (
 	"github.com/cilium/cilium/pkg/logging/logfields"
 	"github.com/cilium/cilium/pkg/maps/lxcmap"
 	"github.com/cilium/cilium/pkg/maps/policymap"
+	"github.com/cilium/cilium/pkg/maps/policymap/policykey"
 	"github.com/cilium/cilium/pkg/option"
 )
 
@@ -69,7 +70,7 @@ var (
 func CreateEPPolicyMap() {
 	buildMap.Do(func() {
 		fd, err := bpf.CreateMap(bpf.BPF_MAP_TYPE_HASH,
-			uint32(unsafe.Sizeof(policymap.PolicyKey{})),
+			uint32(unsafe.Sizeof(policykey.PolicyKey{})),
 			uint32(unsafe.Sizeof(policymap.PolicyEntry{})),
 			policymap.MaxEntries,
 			0, 0)
