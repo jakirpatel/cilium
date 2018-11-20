@@ -21,6 +21,7 @@ import (
 	"github.com/cilium/cilium/pkg/labels"
 	"github.com/cilium/cilium/pkg/lock"
 	"github.com/cilium/cilium/pkg/metrics"
+	"github.com/cilium/cilium/pkg/option"
 	"github.com/cilium/cilium/pkg/policy/api"
 )
 
@@ -526,5 +527,43 @@ func (p *Repository) GetRulesList() *models.Policy {
 	return &models.Policy{
 		Revision: int64(p.GetRevision()),
 		Policy:   JSONMarshalRules(ruleList),
+	}
+}
+
+// ResolvePolicy returns the Policy computed against the provided set of labels.
+func (p *Repository) ResolvePolicy(labels labels.LabelArray) *Policy {
+	calculatedPolicy := &Policy{}
+	calculatedPolicy.IngressPolicyEnabled, calculatedPolicy.EgressPolicyEnabled = p.ComputePolicyEnforcement(labels)
+
+	return nil
+}
+
+// ComputePolicyEnforcement returns whether policy applies at ingress or ingress
+// for the given set of labels.
+//
+// Must be called with repo mutex held for reading.
+func (p *Repository) ComputePolicyEnforcement(lbls labels.LabelArray) (ingress bool, egress bool) {
+	// Check if policy enforcement should be enabled at the daemon level.
+	switch GetPolicyEnabled() {
+	case option.AlwaysEnforce:
+		// If policy enforcement is enabled for the daemon, then it has to be
+		// enabled for the endpoint.
+		return true, true
+	case option.DefaultEnforcement:
+
+		// If the endpoint has the reserved:init label, i.e. if it has not yet
+		// received any labels, always enforce policy (default deny).
+		// TODO double check this.
+		if lbls.Has(labels.IDNameInit) {
+			return true, true
+		}
+
+		// Default mode means that if rules contain labels that match this endpoint,
+		// then enable policy enforcement for this endpoint.
+		return p.GetRulesMatching(lbls)
+	default:
+		// If policy enforcement isn't enabled, we do not enable policy
+		// enforcement for the endpoint.
+		return false, false
 	}
 }
