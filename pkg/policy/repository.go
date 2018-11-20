@@ -565,6 +565,19 @@ func (p *Repository) ResolvePolicy(labels labels.LabelArray) *Policy {
 	calculatedPolicy.IngressPolicyEnabled = ingressEnabled
 	calculatedPolicy.EgressPolicyEnabled = egressEnabled
 
+	ingressCtx := SearchContext{
+		To: labels,
+	}
+
+	egressCtx := SearchContext{
+		From: labels,
+	}
+
+	if option.Config.TracingEnabled() {
+		ingressCtx.Trace = TRACE_ENABLED
+		egressCtx.Trace = TRACE_ENABLED
+	}
+
 	return nil
 }
 
