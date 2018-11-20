@@ -256,8 +256,8 @@ func (e *Endpoint) resolveL4Policy(repo *policy.Repository) (policyChanged bool,
 func (e *Endpoint) computeDesiredPolicyMapState(repo *policy.Repository) {
 	desiredPolicyKeys := make(policy.PolicyMapState)
 	e.computeDesiredL4PolicyMapEntries(desiredPolicyKeys)
-	e.determineAllowLocalhost(desiredPolicyKeys)
-	e.determineAllowFromWorld(desiredPolicyKeys)
+	desiredPolicyKeys.DetermineAllowLocalhost(e.DesiredL4Policy)
+	desiredPolicyKeys.DetermineAllowFromWorld()
 	e.computeDesiredL3PolicyMapEntries(repo, desiredPolicyKeys)
 	e.desiredMapState = desiredPolicyKeys
 }

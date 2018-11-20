@@ -613,6 +613,9 @@ func (p *Repository) ResolvePolicy(labels labels.LabelArray) (*Policy, error) {
 		calculatedPolicy.L4Policy.Egress = newL4EgressPolicy.Egress
 	}
 
+	calculatedPolicy.PolicyMapState.DetermineAllowLocalhost(calculatedPolicy.L4Policy)
+	calculatedPolicy.PolicyMapState.DetermineAllowFromWorld()
+
 	return calculatedPolicy, nil
 }
 
