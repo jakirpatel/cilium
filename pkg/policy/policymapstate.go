@@ -1,4 +1,4 @@
-// Copyright 2018 Authors of Cilium
+// Copyright 2016-2018 Authors of Cilium
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,12 +14,16 @@
 
 package policy
 
-// Policy is a structure which contains the resolved policy across all layers
-// (L3, L4, and L7).
-type Policy struct {
-	L4Policy             *L4Policy
-	CIDRPolicy           *CIDRPolicy
-	IngressPolicyEnabled bool
-	EgressPolicyEnabled  bool
-	PolicyMapState       PolicyMapState
+import "github.com/cilium/cilium/pkg/maps/policymap/policykey"
+
+// PolicyMapState is a state of a policy map.
+type PolicyMapState map[policykey.PolicyKey]PolicyMapStateEntry
+
+// PolicyMapStateEntry is the configuration associated with a PolicyKey in a
+// PolicyMapState. This is a minimized version of policymap.PolicyEntry.
+type PolicyMapStateEntry struct {
+	// The proxy port, in host byte order.
+	// If 0 (default), there is no proxy redirection for the corresponding
+	// PolicyKey.
+	ProxyPort uint16
 }
